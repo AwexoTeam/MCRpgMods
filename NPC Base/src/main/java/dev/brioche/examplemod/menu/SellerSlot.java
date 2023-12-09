@@ -1,14 +1,10 @@
 package dev.brioche.examplemod.menu;
 
-import dev.brioche.examplemod.client.screen.ExampleMenuScreen;
-import dev.brioche.examplemod.mod.DatabaseContainer;
-import net.minecraft.resources.ResourceLocation;
+import dev.brioche.examplemod.client.screen.TradingScreen;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class SellerSlot extends Slot {
     private Player player;
@@ -20,7 +16,7 @@ public class SellerSlot extends Slot {
 
     @Override
     public boolean mayPlace(ItemStack stack) {
-        ItemStack result = ExampleMenuScreen.SellItem(player, index, stack);
+        ItemStack result = TradingScreen.SellItem(player, index, stack);
         return result == ItemStack.EMPTY;
     }
 }

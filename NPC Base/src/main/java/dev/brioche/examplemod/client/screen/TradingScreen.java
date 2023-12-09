@@ -1,7 +1,7 @@
 package dev.brioche.examplemod.client.screen;
 
-import dev.brioche.examplemod.ExampleMod;
-import dev.brioche.examplemod.menu.ExampleMenu;
+import dev.brioche.examplemod.NPCMod;
+import dev.brioche.examplemod.menu.TradingMenu;
 import dev.brioche.examplemod.mod.DatabaseContainer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -9,22 +9,22 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 
-public class ExampleMenuScreen extends AbstractContainerScreen<ExampleMenu> {
+public class TradingScreen extends AbstractContainerScreen<TradingMenu> {
     public  static final int SLOTS_BEFORE_BUY_AREA = 45;
     public  static final int SLOT_INVENTORY_AMOUNT = 36;
-    public ExampleMenu menu;
+    public TradingMenu menu;
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation(ExampleMod.MODID, "textures/gui/example_menu.png");
+            new ResourceLocation(NPCMod.MODID, "textures/gui/example_menu.png");
 
-    public ExampleMenuScreen(ExampleMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
+    public TradingScreen(TradingMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
 
+        //CONSIDER: Better way than hardcoding this?
         this.menu = pMenu;
         this.imageWidth = 176;
         this.imageHeight = 166;
@@ -33,12 +33,16 @@ public class ExampleMenuScreen extends AbstractContainerScreen<ExampleMenu> {
     @Override
     protected void renderBg(@NotNull GuiGraphics pGuiGraphics, float pPartialTick, int pMouseX, int pMouseY) {
         renderBackground(pGuiGraphics);
+
+        //LOOKUP: Blit? It renders UI
         pGuiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
     }
 
     @Override
     public void render(@NotNull GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
+
+        //TODO: No magic numbers. Though for quick editing this is nice.
         float x = this.leftPos + 70;
         float y = this.topPos + 54;
 
@@ -57,21 +61,23 @@ public class ExampleMenuScreen extends AbstractContainerScreen<ExampleMenu> {
             return;
 
         int price = DatabaseContainer.shopPrices.get(itemName);
-
         var toolTip = this.getTooltipFromContainerItem(itemstack);
-
         toolTip.add(Component.empty().append("$" + price));
 
+        //Add item cost to tooltip!
         pGuiGraphics.renderTooltip(this.font, toolTip, itemstack.getTooltipImage(), itemstack, pMouseX, pMouseY);
     }
 
     public static ItemStack BuyItem(Player player, int index){
+
+        //TODO: DEFINITELY NEEDS STATIC
         Item currency = ForgeRegistries.ITEMS.getValue(new ResourceLocation("minecraft","emerald"));
-        ItemStack draggedStack = DatabaseContainer.sellsInventory.getItem(index - ExampleMenuScreen.SLOTS_BEFORE_BUY_AREA);
+        ItemStack draggedStack = DatabaseContainer.sellsInventory.getItem(index - TradingScreen.SLOTS_BEFORE_BUY_AREA);
         String draggedName = draggedStack.getDisplayName().getString();
 
         Inventory pInv = player.getInventory();
 
+        //Safety checks.
         if(draggedStack.isEmpty() || draggedName.equals("[Air]")){
             return ItemStack.EMPTY;
         }
@@ -85,25 +91,29 @@ public class ExampleMenuScreen extends AbstractContainerScreen<ExampleMenu> {
             return ItemStack.EMPTY;
         }
 
+        //Consider making this a function.
         int cost = DatabaseContainer.shopPrices.get(draggedName);
         if(pInv.countItem(currency) < cost){
+            //TODO: Tell player ingame
             System.out.println("Inventory Doesnt have enough of currency");
             return ItemStack.EMPTY;
         }
 
         int stackValue = 0;
-        for (int i = 0; i < cost; i += stackValue) {
-            int slotToYoink = pInv.findSlotMatchingItem(new ItemStack(currency,1));
-            ItemStack stackYoink = pInv.getItem(slotToYoink);
 
-            stackValue = stackYoink.getCount();
+        //Loop through our inventory untill we taken the right amount.
+        for (int i = 0; i < cost; i += stackValue) {
+            int slotToTakeFrom = pInv.findSlotMatchingItem(new ItemStack(currency,1));
+            ItemStack stackToTakeFrom = pInv.getItem(slotToTakeFrom);
+
+            stackValue = stackToTakeFrom.getCount();
             int amountLeft = cost - i;
             int amount = Math.min(stackValue, amountLeft);
 
-            System.out.println("Removing from slot" + slotToYoink + " and taking " + amount + " there is now " + (cost-i) + "/" + cost);
-            pInv.removeItem(slotToYoink, amount);
+            pInv.removeItem(slotToTakeFrom, amount);
         }
 
+        //Add the required item!
         pInv.add(new ItemStack(draggedStack.getItem(),1));
         return new ItemStack(draggedStack.getItem(),1);
 

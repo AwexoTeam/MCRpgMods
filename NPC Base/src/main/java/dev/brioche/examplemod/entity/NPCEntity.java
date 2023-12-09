@@ -1,12 +1,9 @@
 package dev.brioche.examplemod.entity;
 
-import dev.brioche.examplemod.menu.ExampleMenu;
+import dev.brioche.examplemod.menu.TradingMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
@@ -15,18 +12,12 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Zombie;
-import net.minecraft.world.entity.npc.Npc;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.phys.Vec3;
@@ -35,17 +26,12 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.logging.Logger;
+public class NPCEntity extends Mob implements MenuProvider {
 
-public class ExampleEntity extends Mob implements MenuProvider {
-
+    //Default skin to use.
     public String skin = "test.png";
 
-    public ExampleEntity(EntityType<? extends Mob> type, Level level) {
+    public NPCEntity(EntityType<? extends Mob> type, Level level) {
         super(type, level);
         refreshDimensions();
     }
@@ -63,15 +49,20 @@ public class ExampleEntity extends Mob implements MenuProvider {
 
     @Override
     public InteractionResult interactAt(Player player, Vec3 pos, InteractionHand hand) {
+
+        //LOOKUP: Why do we deny clientside?
         if(level().isClientSide)
             return InteractionResult.PASS;
 
+        //TODO: Should be static somewhere
         Item itemTag = ForgeRegistries.ITEMS.getValue(new ResourceLocation("minecraft","name_tag"));
+
         if(player.getItemInHand(hand).getItem().equals(itemTag)){
-            System.out.println("You're right clicking with Name Tag!");
+            DoSkinChange();
             return InteractionResult.PASS;
         }
 
+        //Taken from Forge documentation.
         if(player instanceof ServerPlayer sPlayer){
             NetworkHooks.openScreen(sPlayer, this, buffer -> buffer.writeInt(this.getId()));
         }
@@ -79,18 +70,20 @@ public class ExampleEntity extends Mob implements MenuProvider {
         return InteractionResult.CONSUME;
     }
 
+    //TODO: Give actual attributes
     public static AttributeSupplier.Builder createAttributes() {
         return Zombie.createAttributes();
     }
 
-    public static boolean canSpawn(EntityType<ExampleEntity> entityType, LevelAccessor level, MobSpawnType spawnType, BlockPos position, RandomSource random) {
+    //We spawn em manually so answer is just yes
+    public static boolean canSpawn(EntityType<NPCEntity> entityType, LevelAccessor level, MobSpawnType spawnType, BlockPos position, RandomSource random) {
         return true;
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int pContainerId, @NotNull Inventory pPlayerInventory, Player pPlayer) {
-        return new ExampleMenu(pContainerId, pPlayerInventory, this);
+        return new TradingMenu(pContainerId, pPlayerInventory, this);
     }
 
     @Override
@@ -103,56 +96,28 @@ public class ExampleEntity extends Mob implements MenuProvider {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
 
+        //TODO: Figure out why this doesnt redirect to skin variable.
         this.skin = tag.getString("Skin");
         System.out.println("Skin tag: " + tag.getString("Skin"));
         System.out.println("Skin variable: " + this.skin);
     }
 
-    @Override
-    public void tick() {
-        super.tick();
+    public void DoSkinChange() {
 
-        if(!this.hasCustomName())
+        //No need to continue if it didnt have custom name.
+        if (!this.hasCustomName())
             return;
 
+        //Get Name and check if syntax right
         String name = this.getCustomName().getString().toLowerCase();
-        if(!name.contains("skin:"))
+        if (!name.contains("skin:"))
             return;
 
-        if(!name.contains("www.")){
-            System.out.println("Name contained skin. Changing to: " + name);
-            name = name.substring(5,name.length());
-            skin = name;
+        //Remove "skin:"
+        name = name.substring(5, name.length());
+        skin = name;
 
-            this.setCustomName(Component.literal("Done!"));
-            return;
-        }
-
-        //DownloadImage(name);
+        //A way to tell player that its done.
         this.setCustomName(Component.literal("Done!"));
     }
-
-    public static void DownloadImage(String address) {
-
-        URL url = null;
-        try {
-            url = new URL(address);
-            InputStream in = new BufferedInputStream(url.openStream());
-            OutputStream out = new BufferedOutputStream(new FileOutputStream("C:\\Users\\Brioche\\Desktop\\skin.png"));
-
-            for (int i; (i = in.read()) != -1; ) {
-                out.write(i);
-            }
-            in.close();
-            out.close();
-
-        } catch (MalformedURLException ex) {
-            throw new RuntimeException(ex);
-        } catch (FileNotFoundException ex) {
-            throw new RuntimeException(ex);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
 }

@@ -1,7 +1,7 @@
 package dev.brioche.examplemod.menu;
 
-import dev.brioche.examplemod.client.screen.ExampleMenuScreen;
-import dev.brioche.examplemod.entity.ExampleEntity;
+import dev.brioche.examplemod.client.screen.TradingScreen;
+import dev.brioche.examplemod.entity.NPCEntity;
 import dev.brioche.examplemod.init.MenuInit;
 import dev.brioche.examplemod.mod.DatabaseContainer;
 import net.minecraft.world.SimpleContainer;
@@ -13,40 +13,45 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public class ExampleMenu extends AbstractContainerMenu {
+public class TradingMenu extends AbstractContainerMenu {
 
-    private final ExampleEntity blockEntity;
+    private final NPCEntity blockEntity;
     private final ContainerLevelAccess levelAccess;
 
     // Client Constructor
-    public ExampleMenu(int containerId, Inventory playerInv, FriendlyByteBuf additionalData) {
+    public TradingMenu(int containerId, Inventory playerInv, FriendlyByteBuf additionalData) {
         this(containerId, playerInv, playerInv.player.level().getEntity(additionalData.getInt(0)));
     }
 
     // Server Constructor
-    public ExampleMenu(int containerId, Inventory playerInv, Entity blockEntity) {
+    //LOOKUP: Turty wurty was very contradicting. Said they the same but different. Need more lookup
+    public TradingMenu(int containerId, Inventory playerInv, Entity blockEntity) {
         super(MenuInit.EXAMPLE_MENU.get(), containerId);
-        if(blockEntity instanceof ExampleEntity be) {
-            this.blockEntity = be;
-        } else {
+
+        //Basic throw statement.
+        if(!(blockEntity instanceof NPCEntity be)){
             throw new IllegalStateException("Incorrect block entity class (%s) passed into ExampleMenu!"
                     .formatted(blockEntity.getClass().getCanonicalName()));
         }
 
+        this.blockEntity = be;
         this.levelAccess = ContainerLevelAccess.create(blockEntity.level(), blockEntity.blockPosition());
 
+        //TODO: This should be initalized elsewhere.
+        //TODO: this shouldnt be done like this but thats what my brain can atm.
         if(DatabaseContainer.tradeInventory == null)
             DatabaseContainer.tradeInventory = new SimpleContainer(9);
 
         if(DatabaseContainer.sellsInventory == null)
             DatabaseContainer.sellsInventory = new SimpleContainer(9);
 
+        //Get our slots onto the UI
         createPlayerInteraction(playerInv);
         createSellInventory(be, playerInv.player);
         createBuyInventory(be, playerInv.player);
     }
 
-    private void createSellInventory(ExampleEntity be, Player player) {
+    private void createSellInventory(NPCEntity be, Player player) {
         int index = 0;
         int xo = 8;
         int yo = 18;
@@ -64,7 +69,7 @@ public class ExampleMenu extends AbstractContainerMenu {
         }
     }
 
-    private void createBuyInventory(ExampleEntity be, Player player) {
+    private void createBuyInventory(NPCEntity be, Player player) {
         int index = 0;
         int xo = 116;
         int yo = 18;
@@ -103,13 +108,14 @@ public class ExampleMenu extends AbstractContainerMenu {
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player pPlayer, int pIndex) {
 
-        if(pIndex >= ExampleMenuScreen.SLOTS_BEFORE_BUY_AREA)
-            return ExampleMenuScreen.BuyItem(pPlayer, pIndex);
+        //TODO: gotta deal with it not crashing. One bug at a time.
+        if(pIndex >= TradingScreen.SLOTS_BEFORE_BUY_AREA)
+            return TradingScreen.BuyItem(pPlayer, pIndex);
 
-        if(pIndex < ExampleMenuScreen.SLOT_INVENTORY_AMOUNT){
+        if(pIndex < TradingScreen.SLOT_INVENTORY_AMOUNT){
             var pInv = pPlayer.getInventory();
             var itemStack = pInv.getItem(pIndex);
-            return ExampleMenuScreen.SellItem(pPlayer, pIndex, itemStack);
+            return TradingScreen.SellItem(pPlayer, pIndex, itemStack);
         }
 
         return ItemStack.EMPTY;
