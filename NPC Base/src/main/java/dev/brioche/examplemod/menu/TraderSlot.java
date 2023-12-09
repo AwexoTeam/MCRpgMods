@@ -24,13 +24,12 @@ public class TraderSlot extends Slot {
         if(!player.isCreative())
             return  DoSurvivalPickup(player);
 
-
         return true;
     }
 
     public boolean DoSurvivalPickup(Player player){
         TradingScreen.BuyItem(player,index);
-        this.container.setChanged();
+
         return false;
     }
 }

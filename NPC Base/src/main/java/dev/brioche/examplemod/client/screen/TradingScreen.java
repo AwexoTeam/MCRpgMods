@@ -69,10 +69,9 @@ public class TradingScreen extends AbstractContainerScreen<TradingMenu> {
     }
 
     public static ItemStack BuyItem(Player player, int index){
-
         //TODO: DEFINITELY NEEDS STATIC
         Item currency = ForgeRegistries.ITEMS.getValue(new ResourceLocation("minecraft","emerald"));
-        ItemStack draggedStack = DatabaseContainer.sellsInventory.getItem(index - TradingScreen.SLOTS_BEFORE_BUY_AREA);
+        ItemStack draggedStack = DatabaseContainer.tradeInventory.getItem(index - TradingScreen.SLOTS_BEFORE_BUY_AREA);
         String draggedName = draggedStack.getDisplayName().getString();
 
         Inventory pInv = player.getInventory();
@@ -130,6 +129,7 @@ public class TradingScreen extends AbstractContainerScreen<TradingMenu> {
         player.addItem(new ItemStack(currency, cost * stack.getCount()));
 
         DatabaseContainer.sellsInventory.removeItemType(stack.getItem(), stack.getCount());
+        player.getInventory().removeItem(stack);
         return stack;
     }
 }

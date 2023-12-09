@@ -61,7 +61,7 @@ public class TradingMenu extends AbstractContainerMenu {
                 int x = (column*18) + xo;
                 int y = (row*18)+yo;
 
-                SellerSlot slot = new SellerSlot(player, DatabaseContainer.tradeInventory,index, x,y);
+                SellerSlot slot = new SellerSlot(player, DatabaseContainer.sellsInventory,index, x,y);
                 addSlot(slot);
 
                 index++;
@@ -79,7 +79,7 @@ public class TradingMenu extends AbstractContainerMenu {
                 int x = (column*18) + xo;
                 int y = (row*18)+yo;
 
-                TraderSlot slot = new TraderSlot(player, DatabaseContainer.sellsInventory,index, x,y);
+                TraderSlot slot = new TraderSlot(player, DatabaseContainer.tradeInventory,index, x,y);
                 addSlot(slot);
 
                 index++;
